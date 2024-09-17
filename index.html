@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="styles/styles.css">
+    <style>
+        /* Add any inline styles if necessary */
+        .error-message {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <header class="shop-header">
+        <h1>Online Shop</h1>
+        <nav class="shop-nav">
+            <a href="index.html">Home</a>
+            <a href="login.html">Login</a>
+            <a href="signup.html">Sign Up</a>
+            <a href="admin-dashboard.html">Admin</a>
+        </nav>
+    </header>
+    
+    <div class="auth-container login-container">
+        <h2>Login to Your Account</h2>
+        <form id="loginForm" class="auth-form">
+            <input type="text" id="username" placeholder="Username" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <button type="submit" class="auth-button">Login</button>
+        </form>
+        <p>Don't have an account? <a href="signup.html" class="auth-link">Sign up here</a></p>
+        <div id="loginError" class="error-message"></div>
+    </div>
+    
+    <footer class="shop-footer">
+        <p>&copy; 2024 Our Shop</p>
+    </footer>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        // Redirect or show a success message
+                        window.location.href = 'index.html'; // Redirect to home page or another page upon successful login
+                    } else {
+                        document.getElementById('loginError').innerText = 'Login failed: ' + result.message;
+                    }
+                } else {
+                    document.getElementById('loginError').innerText = 'Server error during login';
+                }
+            } catch (error) {
+                document.getElementById('loginError').innerText = 'Network error: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>

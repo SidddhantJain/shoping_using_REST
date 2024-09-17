@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="styles/styles.css">
+    <style>
+        /* Add any inline styles if necessary */
+        .error-message {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <header class="admin-header">
+        <h1>Admin Dashboard</h1>
+        <nav class="admin-nav">
+            <a href="index.html">Home</a>
+            <a href="signup.html">Sign Up</a>
+            <a href="admin-dashboard.html" id="adminLink">Admin</a>
+        </nav>
+    </header>
+    <main class="admin-main">
+        <section id="productManagement">
+            <h2>Manage Products</h2>
+            <form id="productForm" class="admin-form">
+                <label for="productName">Name:</label>
+                <input type="text" id="productName" name="productName" required>
+                
+                <label for="productPrice">Price:</label>
+                <input type="number" id="productPrice" name="productPrice" required>
+                
+                <label for="productImage">Image URL:</label>
+                <input type="text" id="productImage" name="productImage" required>
+                
+                <button type="submit" class="admin-button">Add Product</button>
+            </form>
+            <div id="productError" class="error-message"></div>
+            <table id="productTable" class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Price</th>
+                        <th>Image</th>
+                        <th>Edit</th>
+                        <th>Delete</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Product rows will be inserted here by JavaScript -->
+                </tbody>
+            </table>
+        </section>
+
+        <section id="userManagement">
+            <h2>Manage Users</h2>
+            <button id="load-users" class="admin-button">Load Users</button>
+            <div id="userError" class="error-message"></div>
+            <table id="users-table" class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Contact</th>
+                        <th>Delete</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- User rows will be inserted here by JavaScript -->
+                </tbody>
+            </table>
+        </section>
+    </main>
+    <footer class="admin-footer">
+        <p>&copy; 2024 Our Shop</p>
+    </footer>
+    <script>
+        // Function to handle adding a product
+        document.getElementById('productForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('productName').value;
+            const price = document.getElementById('productPrice').value;
+            const image = document.getElementById('productImage').value;
+
+            try {
+                const response = await fetch('/api/products', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, price, image })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        // Update the product table (optional)
+                        console.log('Product added successfully');
+                    } else {
+                        document.getElementById('productError').innerText = 'Failed to add product: ' + result.message;
+                    }
+                } else {
+                    document.getElementById('productError').innerText = 'Server error while adding product';
+                }
+            } catch (error) {
+                document.getElementById('productError').innerText = 'Network error: ' + error.message;
+            }
+        });
+
+        // Function to handle loading users
+        document.getElementById('load-users').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/users');
+                if (response.ok) {
+                    const data = await response.json();
+                    const usersTable = document.getElementById('users-table').getElementsByTagName('tbody')[0];
+                    usersTable.innerHTML = ''; // Clear previous data
+
+                    data.users.forEach(user => {
+                        const row = usersTable.insertRow();
+                        row.insertCell(0).textContent = user.id;
+                        row.insertCell(1).textContent = user.username;
+                        row.insertCell(2).textContent = user.email;
+                        row.insertCell(3).textContent = user.role;
+                        row.insertCell(4).textContent = user.phone_number || 'N/A';
+                        const deleteCell = row.insertCell(5);
+                        const deleteButton = document.createElement('button');
+                        deleteButton.textContent = 'Delete';
+                        deleteButton.addEventListener('click', async () => {
+                            try {
+                                const deleteResponse = await fetch(`/api/users/${user.id}`, {
+                                    method: 'DELETE'
+                                });
+
+                                if (deleteResponse.ok) {
+                                    row.remove(); // Remove the row from the table
+                                } else {
+                                    document.getElementById('userError').innerText = 'Failed to delete user';
+                                }
+                            } catch (error) {
+                                document.getElementById('userError').innerText = 'Network error: ' + error.message;
+                            }
+                        });
+                        deleteCell.appendChild(deleteButton);
+                    });
+                } else {
+                    document.getElementById('userError').innerText = 'Server error while loading users';
+                }
+            } catch (error) {
+                document.getElementById('userError').innerText = 'Network error: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>

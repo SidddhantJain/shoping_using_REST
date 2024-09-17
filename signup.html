@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up</title>
+    <link rel="stylesheet" href="styles/styles.css">
+    <style>
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header class="shop-header">
+        <h1>Online Shop</h1>
+        <nav class="shop-nav">
+            <a href="index.html">Home</a>
+            <a href="login.html">Login</a>
+            <a href="signup.html">Sign Up</a>
+            <a href="admin-dashboard.html">Admin</a>
+        </nav>
+    </header>
+    
+    <div class="auth-container signup-container">
+        <h2>Create Your Account</h2>
+        <form id="signupForm" class="auth-form">
+            <input type="text" id="newUsername" placeholder="Username" required>
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="text" id="phoneNumber" placeholder="Phone Number" required>
+            <input type="password" id="newPassword" placeholder="Password" required>
+            <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+            <select id="role" required>
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+            </select>
+            <div id="adminKeyContainer" class="hidden">
+                <input type="text" id="adminKey" placeholder="Admin Key">
+            </div>
+            <button type="submit" class="auth-button">Sign Up</button>
+        </form>
+        <p>Already have an account? <a href="index.html" class="auth-link">Login here</a></p>
+    </div>
+    
+    <footer class="shop-footer">
+        <p>&copy; 2024 Our Shop</p>
+    </footer>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const roleSelect = document.getElementById('role');
+            const adminKeyContainer = document.getElementById('adminKeyContainer');
+            
+            roleSelect.addEventListener('change', () => {
+                if (roleSelect.value === 'admin') {
+                    adminKeyContainer.classList.remove('hidden');
+                } else {
+                    adminKeyContainer.classList.add('hidden');
+                }
+            });
+            
+            document.getElementById('signupForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const username = document.getElementById('newUsername').value;
+                const email = document.getElementById('email').value;
+                const phoneNumber = document.getElementById('phoneNumber').value;
+                const password = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                const role = document.getElementById('role').value;
+                const adminKey = role === 'admin' ? document.getElementById('adminKey').value : '';
+
+                if (password !== confirmPassword) {
+                    alert('Passwords do not match.');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('/api/signup', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            username,
+                            email,
+                            phone_number: phoneNumber,
+                            password,
+                            role,
+                            admin_key: adminKey
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        alert('Account created successfully!');
+                        window.location.href = 'index.html'; // Redirect to login page or home page
+                    } else {
+                        alert('Error: ' + (result.message || 'Account creation failed. Please try again.'));
+                    }
+                } catch (error) {
+                    console.error('Error creating account:', error);
+                    alert('An unexpected error occurred. Please try again later.');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Shop</title>
+    <link rel="stylesheet" href="styles/styles.css">
+</head>
+<body>
+    <header class="shop-header">
+        <h1>Online Shop</h1>
+        <nav class="shop-nav">
+            <a href="index.html">Home</a>
+            <a href="cart.html" id="cartLink">Cart (<span id="cart-count">0</span>)</a>
+            <a href="signup.html" id="signupLink">Sign Up</a>
+            <a href="index.html" id="loginLink">Login</a>
+            <a href="profile.html" id="profileLink" style="display: none;">Profile</a>
+        </nav>
+    </header>
+
+    <div class="shop-container">
+        <h2>Welcome to the Online Shop</h2>
+        <div id="product-list">
+            <!-- Product items will be dynamically loaded here -->
+        </div>
+
+        <div id="checkout-section">
+            <h3>Checkout</h3>
+            <ul id="cart-items">
+                <!-- Cart items will be dynamically added here -->
+            </ul>
+            <p>Total: <span id="total-price">$0.00</span></p>
+            <button id="checkoutButton">Checkout</button>
+        </div>
+    </div>
+
+    <footer class="shop-footer">
+        <p>&copy; 2024 Online Shop</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const productList = document.getElementById('product-list');
+            const cartItems = document.getElementById('cart-items');
+            const cartCount = document.getElementById('cart-count');
+            const totalPriceElem = document.getElementById('total-price');
+            const checkoutButton = document.getElementById('checkoutButton');
+
+            // Function to fetch products and display them
+            async function loadProducts() {
+                try {
+                    const response = await fetch('/api/products');
+                    const data = await response.json();
+                    const products = data.products;
+
+                    productList.innerHTML = '';
+                    products.forEach(product => {
+                        const productDiv = document.createElement('div');
+                        productDiv.className = 'product-item';
+                        productDiv.innerHTML = `
+                            <h3>${product.name}</h3>
+                            <p>Price: $${product.price.toFixed(2)}</p>
+                            <img src="${product.image_url}" alt="${product.name}">
+                            <button data-id="${product.id}" class="add-to-cart-button">Add to Cart</button>
+                        `;
+                        productList.appendChild(productDiv);
+                    });
+
+                    // Add event listeners to "Add to Cart" buttons
+                    document.querySelectorAll('.add-to-cart-button').forEach(button => {
+                        button.addEventListener('click', (e) => {
+                            const productId = e.target.getAttribute('data-id');
+                            addToCart(productId);
+                        });
+                    });
+
+                } catch (error) {
+                    console.error('Error loading products:', error);
+                    alert('Error loading products. Please try again later.');
+                }
+            }
+
+            // Function to add a product to the cart
+            function addToCart(productId) {
+                let cart = JSON.parse(localStorage.getItem('cart')) || [];
+                const product = Array.from(document.querySelectorAll('.product-item')).find(p => p.querySelector('.add-to-cart-button').getAttribute('data-id') === productId);
+
+                if (product) {
+                    const name = product.querySelector('h3').innerText;
+                    const price = parseFloat(product.querySelector('p').innerText.replace('Price: $', ''));
+                    cart.push({ productId, name, price });
+                    localStorage.setItem('cart', JSON.stringify(cart));
+                    updateCart();
+                }
+            }
+
+            // Function to update the cart UI
+            function updateCart() {
+                let cart = JSON.parse(localStorage.getItem('cart')) || [];
+                cartItems.innerHTML = '';
+                let totalPrice = 0;
+
+                cart.forEach(item => {
+                    const listItem = document.createElement('li');
+                    listItem.innerText = `${item.name} - $${item.price.toFixed(2)}`;
+                    cartItems.appendChild(listItem);
+                    totalPrice += item.price;
+                });
+
+                cartCount.innerText = cart.length;
+                totalPriceElem.innerText = `$${totalPrice.toFixed(2)}`;
+            }
+
+            // Function to handle checkout
+            async function handleCheckout() {
+                let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+                if (cart.length === 0) {
+                    alert('Your cart is empty.');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/checkout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ cart })
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        alert('Checkout successful!');
+                        localStorage.removeItem('cart');
+                        updateCart();
+                    } else {
+                        alert('Error during checkout: ' + (result.message || 'Please try again.'));
+                    }
+                } catch (error) {
+                    console.error('Error during checkout:', error);
+                    alert('An unexpected error occurred. Please try again later.');
+                }
+            }
+
+            // Load products when the page loads
+            loadProducts();
+
+            // Set up checkout button event listener
+            checkoutButton.addEventListener('click', handleCheckout);
+        });
+    </script>
+</body>
+</html>
